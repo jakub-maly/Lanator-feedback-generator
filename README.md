@@ -1,5 +1,6 @@
 # Lubo-vs-IT
 Lubo automatizuje
+
 linky na Libraries:
 ta co spracuvava excel a word / poi-bin-4.1.2-20200217.zip
 https://poi.apache.org/download.html#POI-4.1.2

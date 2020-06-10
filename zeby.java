@@ -104,7 +104,7 @@ class MainFrame extends JFrame {
         Center.add(label2);
     }
 
-    private void tryCreate(File file, File directory){
+    private void tryCreate(File file, File directory){   // velice inefficient, just wanted to see if i can do something at all
         Row rowCurrent;
         Cell cellMaster;
         teacher teacherCurrent;
@@ -164,6 +164,8 @@ class MainFrame extends JFrame {
                 }
             }
 
+            //potialto to spracuvava excel, odtialto to vyraba wordy a pdfka
+            
             String dirOutput = directory.getPath()+"\\";
             String dirDocxTeacherEval, dirDocxSubjectEval, dirDocxNumberEval;
             String dirPdfTeacherEval, dirPdfSubjectEval, dirPdfNumberEval;

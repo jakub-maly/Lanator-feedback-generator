@@ -167,6 +167,10 @@ class MainFrame extends JFrame {
                 Map.Entry mapElement = (Map.Entry) hmIterator.next();
                 teachersVector.add((Teacher) mapElement.getValue());
             }
+            
+            iteratorRow.remove();
+            inputStream.close();
+            workbook.close();
 
             /*
             TODO: Print message "Done reading Excel file."

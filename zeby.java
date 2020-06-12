@@ -1,3 +1,15 @@
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
 import org.apache.poi.ss.usermodel.*;
 
 import com.itextpdf.text.*;
@@ -12,105 +24,80 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class zeby {    // netusim ako sa ma robit grafika
+public class Main extends Application {
+
+    public static Stage window;
+    public static VBox vbox;
+    public static Label message;
+
+    public static File file, directory;
+
     public static void main(String[] args){
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JFrame jframe = new MainFrame("Ľubo automatizuje");
-                jframe.setSize(400,400);
-                jframe.setResizable(true);
-                jframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                jframe.setVisible(true);
-            }
-        });
+        launch(args);
     }
-}
 
-class MainFrame extends JFrame {
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        window = primaryStage;
+        window.setTitle("Feedback Excel to PDF converter");
 
-    JButton button1, button3, button2;
-    JLabel label1, label3, label2;
-    JPanel North, Center, South;
-    File file, directory;
+        vbox = new VBox();
+        vbox.setPrefWidth(720);
+        vbox.setPrefHeight(480);
+        vbox.setSpacing(10);
+        vbox.setAlignment(Pos.TOP_CENTER);
 
-    public MainFrame(String title) {
-        super(title);
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("XLS", "*.xls"),
+                new FileChooser.ExtensionFilter("XLSX", "*.xlsx")
+        );
+        DirectoryChooser directoryChooser = new DirectoryChooser();
 
-        North = new JPanel();
-        South = new JPanel();
-        Center = new JPanel();
-        button1 = new JButton("browse");
-        button3 = new JButton("create");
-        button2 = new JButton("browse");
-        label1 = new JLabel("/filename/");
-        label3 = new JLabel("/status/");
-        label2 = new JLabel("/directory/");
+        Label inputLabel = new Label("no input file selected");
+        Label outputLabel = new Label("no output directory selected");
+        message = new Label("");
 
-        this.setLayout(new BorderLayout());
-        this.add(North, BorderLayout.NORTH);
-        this.add(South, BorderLayout.SOUTH);
-        this.add(Center, BorderLayout.CENTER);
-
-        button1.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                int option = fileChooser.showOpenDialog(MainFrame.super.rootPane);
-                if (option == JFileChooser.APPROVE_OPTION) {
-                    file = fileChooser.getSelectedFile();
-                    label1.setText(file.getName());
-                } else {
-                    label1.setText("/pick file/");
-                }
-            }
+        Button inputButton = new Button("select input file");
+        inputButton.setOnAction(event -> {
+            file = fileChooser.showOpenDialog(primaryStage);
+            inputLabel.setText(file.getAbsolutePath());
         });
 
-        button2.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                int option = fileChooser.showOpenDialog(MainFrame.super.rootPane);
-                if (option == JFileChooser.APPROVE_OPTION) {
-                    directory = fileChooser.getSelectedFile();
-                    label2.setText(directory.getPath());
-                } else {
-                    label2.setText("/pick directory/");
-                }
-            }
+        Button outputButton = new Button("select output directory");
+        outputButton.setOnAction(event -> {
+            directory = directoryChooser.showDialog(primaryStage);
+            outputLabel.setText(directory.getAbsolutePath());
         });
 
-        button3.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (file != null & directory != null) {
-                    createHash(file, directory);
-                } else {
-                    label1.setText("/pick file/");
-                    label2.setText("/pick directory/");
-                }
-            }
+        Button startButton = new Button("create");
+        startButton.setOnAction(event -> {
+            if (file != null && directory != null)
+                createHash(file, directory);
         });
 
-        North.add(button1);
-        North.add(label1);
-        South.add(button3);
-        South.add(label3);
-        Center.add(button2);
-        Center.add(label2);
+        HBox inputLine = new HBox();
+        inputLine.getChildren().addAll(inputButton, inputLabel);
+        inputLine.setSpacing(10);
+        inputLine.setAlignment(Pos.CENTER);
+        inputLine.setPadding(new Insets(10, 0, 0, 0));
+
+        HBox outputLine = new HBox();
+        outputLine.getChildren().addAll(outputButton, outputLabel);
+        outputLine.setSpacing(10);
+        outputLine.setAlignment(Pos.CENTER);
+        outputLine.setPadding(new Insets(0, 0, 20, 0));
+
+        vbox.getChildren().addAll(inputLine, outputLine, startButton, message);
+
+        window.setScene(new Scene(vbox));
+        window.show();
     }
 
     private void createHash(File file, File directory) {
@@ -126,7 +113,8 @@ class MainFrame extends JFrame {
 
             Iterator<Row> iteratorRow = sheet.iterator();
 
-            iteratorRow.next();      // aby sme zacali na riadku index 1
+            iteratorRow.next();      //
+            iteratorRow.next();      // aby sme zacali na riadku index 2
             while (iteratorRow.hasNext()) {
                 rowCurrent = iteratorRow.next();
 
@@ -144,12 +132,15 @@ class MainFrame extends JFrame {
                         } else {
                             teacherCurrent = null;
                         }
-                    } else if (teacherCurrent != null && rowCurrent.getCell(cellMaster.getColumnIndex()) != null) {
-                        if (cellMaster.getStringCellValue().contains("Characterize")) {   // characterize je na subject
-                            teacherCurrent.addSubjectEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
-                        } else if (cellMaster.getStringCellValue().contains("What are")) {      // what are je na Teacher
-                            teacherCurrent.addTeacherEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
-                        } else{
+                    } else if (teacherCurrent != null && sheet.getRow(1).getCell(cellMaster.getColumnIndex()) != null && // aby sme vedeli ze ci numericka otazka a jej maxScore
+                            rowCurrent.getCell(cellMaster.getColumnIndex()) != null) {
+                        if (sheet.getRow(1).getCell(cellMaster.getColumnIndex()).getNumericCellValue() == 0) {
+                            if (cellMaster.getStringCellValue().contains("Characterize")) {   // characterize je na subject
+                                teacherCurrent.addSubjectEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
+                            } else if (cellMaster.getStringCellValue().contains("What are")) {      // what are je na Teacher
+                                teacherCurrent.addTeacherEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
+                            }
+                        } else if (sheet.getRow(1).getCell(cellMaster.getColumnIndex()).getNumericCellValue() > 0) {
                             teacherCurrent.addScore(cellMaster.getStringCellValue(), rowCurrent.getCell(cellMaster.getColumnIndex()).getNumericCellValue(), 5);
                         }
                         teachers.replace(teacherCurrent.getNameSubject(), teacherCurrent);
@@ -164,13 +155,7 @@ class MainFrame extends JFrame {
                 teachersVector.add((Teacher) mapElement.getValue());
             }
 
-            iteratorRow.remove();
-            inputStream.close();
-            workbook.close();
-
-            /*
-            TODO: Print message "Done reading Excel file."
-             */
+            message.setText("Done reading Excel file.");
 
             PdfGenerator pdfGenerator = new PdfGenerator();
 

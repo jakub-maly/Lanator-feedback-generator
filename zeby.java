@@ -154,7 +154,7 @@ class MainFrame extends JFrame {
                                 teacherCurrent.addTeacherEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
                             }
                         } else if (sheet.getRow(1).getCell(cellMaster.getColumnIndex()).getNumericCellValue() > 0) {
-                            teacherCurrent.addScore(cellMaster.getStringCellValue(), rowCurrent.getCell(cellMaster.getColumnIndex()).getNumericCellValue(), sheet.getRow(1).getCell(cellMaster.getColumnIndex()).getNumericCellValue());
+                            teacherCurrent.addScore(cellMaster.getStringCellValue(), rowCurrent.getCell(cellMaster.getColumnIndex()).getNumericCellValue(), 5);
                         }
                         teachers.replace(teacherCurrent.getNameSubject(), teacherCurrent);
                     }
@@ -168,11 +168,23 @@ class MainFrame extends JFrame {
                 teachersVector.add((Teacher) mapElement.getValue());
             }
 
+            /*
+            TODO: Print message "Done reading Excel file."
+             */
+
             PdfGenerator pdfGenerator = new PdfGenerator();
 
             for (int i = 0; i < teachersVector.size(); i++) {
 
                 pdfGenerator.createPdf(teachersVector.get(i), directory);
+
+                /*
+                TODO: Print message "ratings_[subject_name].pdf generated"
+                TODO: Print message "subjecteval_[subject_name].pdf generated" after I write the function that generates
+                TODO: subject evaluation pdfs
+                TODO: Print message "teachereval_[subject_name].pdf generated" after I write the function that generates
+                TODO: teacher evaluation pdfs
+                */
 
             }
         } catch (Exception e) {
@@ -195,9 +207,9 @@ class PdfGenerator {
         //Na nazvy suborov
         int filenumber = 1;
 
-
+        //Veci na path kde sa to ulozi a nazov suboru
         String path = directory.getPath()+"\\";
-        String filename = teacher.getNameSubject();
+        String filename = "ratings_" + teacher.getNameSubject();
 
         //Veci na vytvorenie pdfka
         Document document = new Document();
@@ -209,7 +221,7 @@ class PdfGenerator {
 
         while (it.hasNext()) {
 
-            //Vezmem value teda array frekvencii hodnoteni z objektu na ktoroj sme teraz
+            //Vezmem value teda array frekvencii hodnoteni a nazov predmetu z objektu na ktoroj sme teraz
             Map.Entry pair = (Map.Entry) it.next();
             int[] frequencies = (int[]) pair.getValue();
             String question = (String) pair.getKey();
@@ -221,12 +233,14 @@ class PdfGenerator {
             PdfPTable table = new PdfPTable(6);
             table.addCell("Hodnota/ value");
 
+            //Pridam to tabulky cisla hodnoteni
             for (int i = 1; i <= frequencies.length; i++) {
                 table.addCell(Integer.toString(i));
             }
 
             table.addCell("Koľkokrát/ frequency");
 
+            //Intermediate premenne na priemer
             int totalScore = 0;
             int totalRespondents = 0;
             float average = 0;
@@ -234,7 +248,9 @@ class PdfGenerator {
             //Prebehnem pole s frekvenciami a dam ich do datasetu
             for (int i = 0; i < frequencies.length; i++) {
 
+                //Pridam frekvencie do datasetu na fraf
                 dataSet.setValue(frequencies[i], "Frequency", Integer.toString(i + 1));
+                //Pridam frekvencie do tabulky
                 table.addCell(Integer.toString(frequencies[i]));
 
                 totalScore += (i + 1) * frequencies[i];
@@ -242,9 +258,12 @@ class PdfGenerator {
 
             }
 
+            //Vyratam priemer
             average = (float) totalScore / (float) totalRespondents;
+            //A pridam ho do tabulky
             table.addCell("Priemer/ average");
             table.addCell(Float.toString(average));
+            //Doplnim prazdne bunky do riadku s priemerom lebo inak to nechce spravit tabulku
             for (int i = 2; i <= frequencies.length; i++) {
                 table.addCell("");
             }
@@ -262,7 +281,7 @@ class PdfGenerator {
             File barChart = new File(chartFileName);
             ChartUtils.saveChartAsPNG(barChart, chart, 640, 480);
 
-            //Dam otazku a za nou graf to pdfka
+            //Dam otazku a za nou graf a tabulku to pdfka
             Image chartImage = Image.getInstance(chartFileName);
             chartImage.scalePercent(75);
             document.add(new Paragraph(question));

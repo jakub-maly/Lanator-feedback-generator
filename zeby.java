@@ -126,8 +126,7 @@ class MainFrame extends JFrame {
 
             Iterator<Row> iteratorRow = sheet.iterator();
 
-            iteratorRow.next();      //
-            iteratorRow.next();      // aby sme zacali na riadku index 2
+            iteratorRow.next();      // aby sme zacali na riadku index 1
             while (iteratorRow.hasNext()) {
                 rowCurrent = iteratorRow.next();
 
@@ -145,15 +144,12 @@ class MainFrame extends JFrame {
                         } else {
                             teacherCurrent = null;
                         }
-                    } else if (teacherCurrent != null && sheet.getRow(1).getCell(cellMaster.getColumnIndex()) != null && // aby sme vedeli ze ci numericka otazka a jej maxScore
-                            rowCurrent.getCell(cellMaster.getColumnIndex()) != null) {
-                        if (sheet.getRow(1).getCell(cellMaster.getColumnIndex()).getNumericCellValue() == 0) {
-                            if (cellMaster.getStringCellValue().contains("Characterize")) {   // characterize je na subject
-                                teacherCurrent.addSubjectEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
-                            } else if (cellMaster.getStringCellValue().contains("What are")) {      // what are je na Teacher
-                                teacherCurrent.addTeacherEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
-                            }
-                        } else if (sheet.getRow(1).getCell(cellMaster.getColumnIndex()).getNumericCellValue() > 0) {
+                    } else if (teacherCurrent != null && rowCurrent.getCell(cellMaster.getColumnIndex()) != null) {
+                        if (cellMaster.getStringCellValue().contains("Characterize")) {   // characterize je na subject
+                            teacherCurrent.addSubjectEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
+                        } else if (cellMaster.getStringCellValue().contains("What are")) {      // what are je na Teacher
+                            teacherCurrent.addTeacherEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
+                        } else{
                             teacherCurrent.addScore(cellMaster.getStringCellValue(), rowCurrent.getCell(cellMaster.getColumnIndex()).getNumericCellValue(), 5);
                         }
                         teachers.replace(teacherCurrent.getNameSubject(), teacherCurrent);
@@ -167,7 +163,7 @@ class MainFrame extends JFrame {
                 Map.Entry mapElement = (Map.Entry) hmIterator.next();
                 teachersVector.add((Teacher) mapElement.getValue());
             }
-            
+
             iteratorRow.remove();
             inputStream.close();
             workbook.close();

@@ -161,17 +161,16 @@ public class Main extends Application {
 
             for (int i = 0; i < teachersVector.size(); i++) {
 
-                pdfGenerator.generateRatings(teachersVector.get(i), directory);
-                pdfGenerator.generateSubEval(teachersVector.get(i),directory);
-                pdfGenerator.generateTeachEval(teachersVector.get(i),directory);
+                String currentSubjectName = teachersVector.get(i).getNameSubject();
 
-                /*
-                TODO: Print message "ratings_[subject_name].pdf generated"
-                TODO: Print message "subjecteval_[subject_name].pdf generated" after I write the function that generates
-                TODO: subject evaluation pdfs
-                TODO: Print message "teachereval_[subject_name].pdf generated" after I write the function that generates
-                TODO: teacher evaluation pdfs
-                */
+                pdfGenerator.generateRatings(teachersVector.get(i), directory);
+                message.setText("Generated ratings ratings for " + currentSubjectName);
+
+                pdfGenerator.generateSubEval(teachersVector.get(i),directory);
+                message.setText("Generated subject evaluation for " + currentSubjectName);
+
+                pdfGenerator.generateTeachEval(teachersVector.get(i),directory);
+                message.setText("Generated teacher evaluation for " + currentSubjectName);
 
             }
         } catch (Exception e) {
@@ -182,12 +181,15 @@ public class Main extends Application {
 
 class PdfGenerator {
 
+    /**
+     * TODO: Add support for pismenka s makcenom
+     */
+
     private HashMap averages;
 
-    PdfGenerator(Vector teachersVector) {
+    PdfGenerator(Vector teachers) {
 
-        //averages = calculateAverages(teachersVector);
-        //System.out.println("tu som");
+        averages = calculateAverages(teachers);
 
     }
 
@@ -202,7 +204,7 @@ class PdfGenerator {
         int filenumber = 1;
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = directory.getPath()+"\\";
+        String path = directory.getPath() + "\\";
         String filename = "ratings_" + teacher.getNameSubject();
 
         //Veci na vytvorenie pdfka
@@ -215,13 +217,13 @@ class PdfGenerator {
 
         while (it.hasNext()) {
 
-            //Vezmem value teda array frekvencii hodnoteni a nazov predmetu z objektu na ktoroj sme teraz
+            //Vezmem value teda array frekvencii hodnoteni a nazov predmetu z objektu na ktorom sme teraz
             Map.Entry pair = (Map.Entry) it.next();
             int[] frequencies = (int[]) pair.getValue();
             String question = (String) pair.getKey();
 
             //Vytvorim dataset na graf
-            DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
+            DefaultCategoryDataset ratingsSet = new DefaultCategoryDataset();
 
             //Vytvorim sablonu tabulky
             PdfPTable table = new PdfPTable(6);
@@ -243,7 +245,7 @@ class PdfGenerator {
             for (int i = 0; i < frequencies.length; i++) {
 
                 //Pridam frekvencie do datasetu na fraf
-                dataSet.setValue(frequencies[i], "Frequency", Integer.toString(i + 1));
+                ratingsSet.setValue(frequencies[i], "Frequency", Integer.toString(i + 1));
                 //Pridam frekvencie do tabulky
                 table.addCell(Integer.toString(frequencies[i]));
 
@@ -262,29 +264,63 @@ class PdfGenerator {
                 table.addCell("");
             }
 
-            //Toto tu zevraj treba podla StackOverflow
-            it.remove();
-
             //Spravim chart objekt s datasetu
-            JFreeChart chart = ChartFactory.createBarChart(
+            JFreeChart ratingsChart = ChartFactory.createBarChart(
                     "Vaše hodnotenie/ your evaluation", "Hodnota/ value", "Koľkokrát/ frequency",
-                    dataSet, PlotOrientation.VERTICAL, false, true, false);
+                    ratingsSet, PlotOrientation.VERTICAL, false, true, false);
 
             //A nakreslim z toho pekny obrazok
-            String chartFileName = "chart" + Integer.toString(filenumber) + ".png";
-            File barChart = new File(chartFileName);
-            ChartUtils.saveChartAsPNG(barChart, chart, 640, 480);
+            String ratingsChartFileName = "ratings" + Integer.toString(filenumber) + ".png";
+            File ratingsChartFile = new File(ratingsChartFileName);
+            ChartUtils.saveChartAsPNG(ratingsChartFile, ratingsChart, 640, 480);
 
             //Dam otazku a za nou graf a tabulku to pdfka
-            Image chartImage = Image.getInstance(chartFileName);
-            chartImage.scalePercent(75);
+            Image ratingsChartImage = Image.getInstance(ratingsChartFileName);
+            ratingsChartImage.scalePercent(60);
             document.add(new Paragraph(question));
-            document.add(chartImage);
+            document.add(ratingsChartImage);
             document.add(table);
+
+            //Pridam nadpisy na priemery
+            document.add(new Chunk(""));
+            document.add(new Paragraph("Hodnotenia všetkých predmetov/učiteľov od najnižšieho po najvyššie"));
+            document.add(new Paragraph("Evaluation of all subject/teachers from the lowest to the highest"));
+
+            //Vezmem LinkedList priemerov na danu otazku a spravim z toho array
+            LinkedList averagesTemp = (LinkedList)averages.get(question);
+            Object[] averagesArray = averagesTemp.toArray();
+
+            //Vytvorim dataset na priemery
+            DefaultCategoryDataset averagesSet = new DefaultCategoryDataset();
+
+            //Nahadzem priemery do datasetu
+            for (int i = 0; i < averagesArray.length; i++) {
+
+                averagesSet.setValue((float)averagesArray[i], "Average", Integer.toString(i+1));
+
+            }
+
+            //Spravim chart z priemerov
+            JFreeChart averagesChart = ChartFactory.createBarChart(
+                    "", "Hodnota/ value", "",
+                    averagesSet, PlotOrientation.VERTICAL, false, true, false);
+
+            String averagesChartFileName = "averages" + Integer.toString(filenumber) + ".png";
+            File averagesChartFile = new File(averagesChartFileName);
+            ChartUtils.saveChartAsPNG(averagesChartFile, averagesChart, 640, 480);
+
+            //Dam chart do PDFka
+            Image averagesChartImage = Image.getInstance(averagesChartFileName);
+            averagesChartImage.scalePercent(60);
+            document.add(averagesChartImage);
+
             document.newPage();
 
             //Zvysim cislo grafu o 1
             filenumber++;
+
+            //Toto tu zevraj treba podla StackOverflow
+            it.remove();
 
         }
 
@@ -416,7 +452,7 @@ class PdfGenerator {
 
                 }
 
-                it.remove();
+                //it.remove();
             }
 
         }

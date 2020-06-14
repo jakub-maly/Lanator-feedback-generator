@@ -1,4 +1,6 @@
 # Lubo-vs-IT
+Stiahnite si ten font a dajte si ho do project folderu
+
 Lubo automatizuje
 linky na Libraries:
 ta co spracuvava excel a word / poi-bin-4.1.2-20200217.zip

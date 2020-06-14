@@ -272,14 +272,15 @@ public class Main extends Application {
 
 class PdfGenerator {
 
-    /*
-    TODO: Add support for pismenka s makcenom
-     */
     private HashMap averages;
+    private Font font;
 
-    PdfGenerator(Vector teachers) {
+    PdfGenerator(Vector teachers) throws IOException, DocumentException {
 
         averages = calculateAverages(teachers);
+
+        BaseFont baseFont = BaseFont.createFont("roboto.ttf",BaseFont.IDENTITY_H,BaseFont.EMBEDDED);
+        font = new Font(baseFont);
 
     }
 
@@ -306,8 +307,6 @@ class PdfGenerator {
         document.add(new Chunk(""));
 
         while (it.hasNext()) {
-
-            Main.setMessage("Generating PDF number " + filenumber);
 
             //Vezmem value teda array frekvencii hodnoteni a nazov predmetu z objektu na ktorom sme teraz
             Map.Entry pair = (Map.Entry) it.next();
@@ -369,9 +368,8 @@ class PdfGenerator {
             //Dam otazku a za nou graf a tabulku to pdfka
             Image ratingsChartImage = Image.getInstance(ratingsChartFileName);
             ratingsChartImage.scalePercent(60);
-            document.add(new Paragraph(question));
+            document.add(new Paragraph(question,font));
             document.add(ratingsChartImage);
-            //Zahram sa na smetiara
             File toRemove = new File(ratingsChartFileName);
             toRemove.delete();
 
@@ -379,8 +377,8 @@ class PdfGenerator {
 
             //Pridam nadpisy na priemery
             document.add(new Chunk(""));
-            document.add(new Paragraph("Hodnotenia všetkých predmetov/učiteľov od najnižšieho po najvyššie"));
-            document.add(new Paragraph("Evaluation of all subject/teachers from the lowest to the highest"));
+            document.add(new Paragraph("Hodnotenia všetkých predmetov/učiteľov od najnižšieho po najvyššie",font));
+            document.add(new Paragraph("Evaluation of all subject/teachers from the lowest to the highest",font));
 
             //Vezmem LinkedList priemerov na danu otazku a spravim z toho array
             LinkedList averagesTemp = (LinkedList)averages.get(question);
@@ -409,7 +407,6 @@ class PdfGenerator {
             Image averagesChartImage = Image.getInstance(averagesChartFileName);
             averagesChartImage.scalePercent(60);
             document.add(averagesChartImage);
-            //Zahram sa na smetiara
             toRemove = new File(averagesChartFileName);
             toRemove.delete();
 
@@ -426,8 +423,7 @@ class PdfGenerator {
         //Koniec prace s pdfkom
         document.close();
         fileOutputStream.close();
-        Main.setMessage("PDF generation finished.");
-        Main.running = false;
+
     }
 
     public void generateSubEval(Teacher teacher, File directory) throws IOException, DocumentException {
@@ -447,8 +443,8 @@ class PdfGenerator {
         document.add(new Chunk(""));
 
         //Nadpisy
-        document.add(new Paragraph("Popíš typickú hodinu a čo sa ti na hodinách páči/nepáči? Ako by sa dali hodiny zlepšiť?"));
-        document.add(new Paragraph("Characterize typical lessons and what you like/dislike about them? What would you suggest to improve the lessons?"));
+        document.add(new Paragraph("Popíš typickú hodinu a čo sa ti na hodinách páči/nepáči? Ako by sa dali hodiny zlepšiť?",font));
+        document.add(new Paragraph("Characterize typical lessons and what you like/dislike about them? What would you suggest to improve the lessons?",font));
         document.add(new Chunk(""));
 
         //Vytvorim sablonu tabulky
@@ -487,8 +483,8 @@ class PdfGenerator {
         document.add(new Chunk(""));
 
         //Nadpisy
-        document.add(new Paragraph("Prečo je/nie je učiteľ pre mňa vzorom? Čo sú jeho silné stránky a na čom by mohol popracovať?"));
-        document.add(new Paragraph("What are the reasons that the teacher is/is not positive role model for me? What are the teacher’s strengths and what could he/she improve?"));
+        document.add(new Paragraph("Prečo je/nie je učiteľ pre mňa vzorom? Čo sú jeho silné stránky a na čom by mohol popracovať?",font));
+        document.add(new Paragraph("What are the reasons that the teacher is/is not positive role model for me? What are the teacher’s strengths and what could he/she improve?",font));
         document.add(new Chunk(""));
 
         //Vytvorim sablonu tabulky

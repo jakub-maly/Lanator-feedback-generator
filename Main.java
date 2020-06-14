@@ -1,9 +1,11 @@
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
@@ -30,77 +32,150 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+/**
+ * Launches the window, loads sheets
+ */
 public class Main extends Application {
 
+//    replacement for CSS file for brevity
+    public static String buttonStyle =
+            "-fx-background-color: hotpink; " +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 10;";
+    public static String bgStyle =
+            "-fx-background-color: pink;";
+
+//    JavaFX elements of the Application
     public static Stage window;
     public static VBox vbox;
     public static Label message;
+    public static javafx.scene.image.Image logo;
 
+//    input, output
     public static File file, directory;
 
+//    stores whether the program is running
+//    TODO: add close warning while running
+    public static boolean running = false;
+
+    /**
+     * Launches start function
+     *
+     * @param args
+     */
     public static void main(String[] args){
         launch(args);
     }
 
+    /**
+     * Initiates the Application window
+     *
+     * @param window    proprietary JavaFX stage with no Nodes
+     */
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        window = primaryStage;
-        window.setTitle("Feedback Excel to PDF converter");
+    public void start(Stage window) {
+        try {
 
-        vbox = new VBox();
-        vbox.setPrefWidth(720);
-        vbox.setPrefHeight(480);
-        vbox.setSpacing(10);
-        vbox.setAlignment(Pos.TOP_CENTER);
+//            top bar logo
+            logo = new javafx.scene.image.Image("icon.png");
 
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("XLS", "*.xls"),
-                new FileChooser.ExtensionFilter("XLSX", "*.xlsx")
-        );
-        DirectoryChooser directoryChooser = new DirectoryChooser();
+//            main window frame
+            window.setTitle("Feedback Excel to PDF converter");
+            window.getIcons().add(logo);
 
-        Label inputLabel = new Label("no input file selected");
-        Label outputLabel = new Label("no output directory selected");
-        message = new Label("");
+//            vertical box, contains all graphics Nodes
+            vbox = new VBox();
+            vbox.setPrefWidth(720);
+            vbox.setPrefHeight(480);
+            vbox.setSpacing(10);
+            vbox.setAlignment(Pos.TOP_CENTER);
+            vbox.setStyle(bgStyle);
 
-        Button inputButton = new Button("select input file");
-        inputButton.setOnAction(event -> {
-            file = fileChooser.showOpenDialog(primaryStage);
-            inputLabel.setText(file.getAbsolutePath());
-        });
+//            chooser elements for input and output
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel files", "*.xls", "*.xlsx"));
+            DirectoryChooser directoryChooser = new DirectoryChooser();
 
-        Button outputButton = new Button("select output directory");
-        outputButton.setOnAction(event -> {
-            directory = directoryChooser.showDialog(primaryStage);
-            outputLabel.setText(directory.getAbsolutePath());
-        });
+//            labels
+            Label inputLabel = new Label("no input file selected");
+            Label outputLabel = new Label("no output directory selected");
+            message = new Label("");
 
-        Button startButton = new Button("create");
-        startButton.setOnAction(event -> {
-            if (file != null && directory != null)
-                createHash(file, directory);
-        });
+//            input button, calls fileChooser, changes inputLabel to selected filepath
+            Button inputButton = new Button("select input file");
+            inputButton.setOnAction(event -> {
+                file = fileChooser.showOpenDialog(window);
+                inputLabel.setText(file.getAbsolutePath());
+            });
+            inputButton.setStyle(buttonStyle);
 
-        HBox inputLine = new HBox();
-        inputLine.getChildren().addAll(inputButton, inputLabel);
-        inputLine.setSpacing(10);
-        inputLine.setAlignment(Pos.CENTER);
-        inputLine.setPadding(new Insets(10, 0, 0, 0));
+//            output button, calls directoryChooser, changes outputLabel to selected dirpath
+            Button outputButton = new Button("select output directory");
+            outputButton.setOnAction(event -> {
+                directory = directoryChooser.showDialog(window);
+                outputLabel.setText(directory.getAbsolutePath());
+            });
+            outputButton.setStyle(buttonStyle);
 
-        HBox outputLine = new HBox();
-        outputLine.getChildren().addAll(outputButton, outputLabel);
-        outputLine.setSpacing(10);
-        outputLine.setAlignment(Pos.CENTER);
-        outputLine.setPadding(new Insets(0, 0, 20, 0));
+//            begins loading from file (selected by fileChooser)
+//            runs only if both input file and output directory are selected
+            Button startButton = new Button("create");
+            startButton.setOnAction(event -> {
+                if (file != null && directory != null) {
+                    setMessage("Reading from Excel file.");
+                    running = true;
+                    createHash(file, directory);
+                }
+                else {
+                    setMessage("Failed to read from file, input or output selection invalid.");
+                }
+            });
+            startButton.setStyle(buttonStyle);
 
-        vbox.getChildren().addAll(inputLine, outputLine, startButton, message);
+//            bar that shows progress
+            ProgressBar progressBar = new ProgressBar();
+            progressBar.setStyle(buttonStyle);
 
-        window.setScene(new Scene(vbox));
-        window.show();
+//            creates horizontal arrays of input (and output) buttons and labels
+            HBox inputLine = new HBox();
+            inputLine.getChildren().addAll(inputButton, inputLabel);
+            inputLine.setSpacing(10);
+            inputLine.setAlignment(Pos.CENTER);
+            inputLine.setPadding(new Insets(10, 0, 0, 0));
+
+            HBox outputLine = new HBox();
+            outputLine.getChildren().addAll(outputButton, outputLabel);
+            outputLine.setSpacing(10);
+            outputLine.setAlignment(Pos.CENTER);
+            outputLine.setPadding(new Insets(0, 0, 20, 0));
+
+//            adds all nodes to the main vertical box
+            vbox.getChildren().addAll(inputLine, outputLine, startButton, message);
+
+//            creates a scene, shows
+            Scene scene = new Scene(vbox);
+            scene.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, new EventHandler<javafx.scene.input.MouseEvent>() {
+                @Override
+                public void handle(javafx.scene.input.MouseEvent event) {
+                    System.out.println("click.");
+                }
+            });
+            window.setScene(scene);
+            window.show();
+        }
+
+        catch (Exception exception) {
+            showError(exception);
+        }
     }
 
-    private void createHash(File file, File directory) {
+    /**
+     * Creates a HashMap with all spreadsheet data; calls functions to generate PDFs
+     *
+     * @param file      input file, excel format
+     * @param directory output directory (for generated PDFs)
+     */
+    private void createHash (File file, File directory) {
         Row rowCurrent;
         Cell cellMaster;
         Teacher teacherCurrent = null;
@@ -155,7 +230,7 @@ public class Main extends Application {
             inputStream.close();
             workbook.close();
 
-            message.setText("Done reading Excel file.");
+            setMessage("Done reading Excel file.");
 
             PdfGenerator pdfGenerator = new PdfGenerator(teachersVector);
 
@@ -164,27 +239,39 @@ public class Main extends Application {
                 String currentSubjectName = teachersVector.get(i).getNameSubject();
 
                 pdfGenerator.generateRatings(teachersVector.get(i), directory);
-                message.setText("Generated ratings ratings for " + currentSubjectName);
+                setMessage("Generated ratings ratings for " + currentSubjectName);
 
                 pdfGenerator.generateSubEval(teachersVector.get(i),directory);
-                message.setText("Generated subject evaluation for " + currentSubjectName);
+                setMessage("Generated subject evaluation for " + currentSubjectName);
 
                 pdfGenerator.generateTeachEval(teachersVector.get(i),directory);
-                message.setText("Generated teacher evaluation for " + currentSubjectName);
+                setMessage("Generated teacher evaluation for " + currentSubjectName);
 
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception exception) {
+            showError(exception);
         }
+    }
+
+    /**
+     * Creates error window, prints Exception
+     *
+     * @param exception     Exception that is printed
+     */
+    void showError (Exception exception) {
+        setMessage(exception.toString());
+    }
+
+    static void setMessage(String message) {
+        Main.message.setText(String.format("[" + "%1$TH:%1$TM:%1$TS", System.currentTimeMillis()) + "] " + message);
     }
 }
 
 class PdfGenerator {
 
-    /**
-     * TODO: Add support for pismenka s makcenom
+    /*
+    TODO: Add support for pismenka s makcenom
      */
-
     private HashMap averages;
 
     PdfGenerator(Vector teachers) {
@@ -216,6 +303,8 @@ class PdfGenerator {
         document.add(new Chunk(""));
 
         while (it.hasNext()) {
+
+            Main.setMessage("Generating PDF number " + filenumber);
 
             //Vezmem value teda array frekvencii hodnoteni a nazov predmetu z objektu na ktorom sme teraz
             Map.Entry pair = (Map.Entry) it.next();
@@ -327,7 +416,8 @@ class PdfGenerator {
         //Koniec prace s pdfkom
         document.close();
         fileOutputStream.close();
-
+        Main.setMessage("PDF generation finished.");
+        Main.running = false;
     }
 
     public void generateSubEval(Teacher teacher, File directory) throws IOException, DocumentException {

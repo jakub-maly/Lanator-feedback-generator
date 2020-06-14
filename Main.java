@@ -37,24 +37,24 @@ import java.io.IOException;
  */
 public class Main extends Application {
 
-//    replacement for CSS file for brevity
+    //    replacement for CSS file for brevity
     public static String buttonStyle =
             "-fx-background-color: hotpink; " +
-            "-fx-text-fill: white;" +
-            "-fx-background-radius: 10;";
+                    "-fx-text-fill: white;" +
+                    "-fx-background-radius: 10;";
     public static String bgStyle =
             "-fx-background-color: pink;";
 
-//    JavaFX elements of the Application
+    //    JavaFX elements of the Application
     public static Stage window;
     public static VBox vbox;
     public static Label message;
     public static javafx.scene.image.Image logo;
 
-//    input, output
+    //    input, output
     public static File file, directory;
 
-//    stores whether the program is running
+    //    stores whether the program is running
 //    TODO: add close warning while running
     public static boolean running = false;
 
@@ -124,7 +124,10 @@ public class Main extends Application {
                 if (file != null && directory != null) {
                     setMessage("Reading from Excel file.");
                     running = true;
-                    createHash(file, directory);
+                    Thread thread = new Thread(() -> {
+                        createHash(file, directory);
+                    });
+                    thread.start();
                 }
                 else {
                     setMessage("Failed to read from file, input or output selection invalid.");
@@ -369,9 +372,9 @@ class PdfGenerator {
             document.add(new Paragraph(question));
             document.add(ratingsChartImage);
             //Zahram sa na smetiara
-            File toRemove = new File(ratingsChartFileName);     
+            File toRemove = new File(ratingsChartFileName);
             toRemove.delete();
-            
+
             document.add(table);
 
             //Pridam nadpisy na priemery
@@ -409,7 +412,7 @@ class PdfGenerator {
             //Zahram sa na smetiara
             toRemove = new File(averagesChartFileName);
             toRemove.delete();
-            
+
             document.newPage();
 
             //Zvysim cislo grafu o 1

@@ -368,6 +368,10 @@ class PdfGenerator {
             ratingsChartImage.scalePercent(60);
             document.add(new Paragraph(question));
             document.add(ratingsChartImage);
+            //Zahram sa na smetiara
+            File toRemove = new File(ratingsChartFileName);     
+            toRemove.delete();
+            
             document.add(table);
 
             //Pridam nadpisy na priemery
@@ -402,7 +406,10 @@ class PdfGenerator {
             Image averagesChartImage = Image.getInstance(averagesChartFileName);
             averagesChartImage.scalePercent(60);
             document.add(averagesChartImage);
-
+            //Zahram sa na smetiara
+            toRemove = new File(averagesChartFileName);
+            toRemove.delete();
+            
             document.newPage();
 
             //Zvysim cislo grafu o 1

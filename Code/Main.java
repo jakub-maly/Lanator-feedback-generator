@@ -1,3 +1,5 @@
+import com.itextpdf.text.Font;
+import com.itextpdf.text.pdf.BaseFont;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -40,8 +42,8 @@ public class Main extends Application {
     //    replacement for CSS file for brevity
     public static String buttonStyle =
             "-fx-background-color: hotpink; " +
-                    "-fx-text-fill: white;" +
-                    "-fx-background-radius: 10;";
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 10;";
     public static String bgStyle =
             "-fx-background-color: pink;";
 
@@ -124,10 +126,7 @@ public class Main extends Application {
                 if (file != null && directory != null) {
                     setMessage("Reading from Excel file.");
                     running = true;
-                    Thread thread = new Thread(() -> {
-                        createHash(file, directory);
-                    });
-                    thread.start();
+                    createHash(file, directory);
                 }
                 else {
                     setMessage("Failed to read from file, input or output selection invalid.");
@@ -157,12 +156,6 @@ public class Main extends Application {
 
 //            creates a scene, shows
             Scene scene = new Scene(vbox);
-            scene.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, new EventHandler<javafx.scene.input.MouseEvent>() {
-                @Override
-                public void handle(javafx.scene.input.MouseEvent event) {
-                    System.out.println("click.");
-                }
-            });
             window.setScene(scene);
             window.show();
         }
@@ -172,13 +165,17 @@ public class Main extends Application {
         }
     }
 
+    void setApplicationStype () {
+        vbox.setStyle(bgStyle);
+    }
+
     /**
      * Creates a HashMap with all spreadsheet data; calls functions to generate PDFs
      *
      * @param file      input file, excel format
      * @param directory output directory (for generated PDFs)
      */
-    private void createHash (File file, File directory) {
+    void createHash (File file, File directory) {
         Row rowCurrent;
         Cell cellMaster;
         Teacher teacherCurrent = null;
@@ -242,15 +239,16 @@ public class Main extends Application {
                 String currentSubjectName = teachersVector.get(i).getNameSubject();
 
                 pdfGenerator.generateRatings(teachersVector.get(i), directory);
-                setMessage("Generated ratings ratings for " + currentSubjectName);
+//                setMessage("Generated ratings ratings for " + currentSubjectName);
 
                 pdfGenerator.generateSubEval(teachersVector.get(i),directory);
-                setMessage("Generated subject evaluation for " + currentSubjectName);
+//                setMessage("Generated subject evaluation for " + currentSubjectName);
 
                 pdfGenerator.generateTeachEval(teachersVector.get(i),directory);
-                setMessage("Generated teacher evaluation for " + currentSubjectName);
-
+//                setMessage("Generated teacher evaluation for " + currentSubjectName);
             }
+
+            setMessage("Generated all PDF files.");
         } catch (Exception exception) {
             showError(exception);
         }

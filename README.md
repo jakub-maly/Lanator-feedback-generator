@@ -12,4 +12,3 @@ The application is found in the `Application` folder. The application will only 
 
 ## Planned features:
  - Email sending (In alpha now)
- - `.exe` version

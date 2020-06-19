@@ -303,6 +303,7 @@ class PdfGenerator {
         document.open();
         //Toto som sem musel dat lebo si to myslelo ze dokument je prazdny
         document.add(new Chunk(""));
+        document.add(new Paragraph(teacher.getNameSubject(),font));
 
         while (it.hasNext()) {
 
@@ -439,6 +440,7 @@ class PdfGenerator {
         document.open();
         //Toto som sem musel dat lebo si to myslelo ze dokument je prazdny
         document.add(new Chunk(""));
+        document.add(new Paragraph(teacher.getNameSubject(),font));
 
         //Nadpisy
         document.add(new Paragraph("Popíš typickú hodinu a čo sa ti na hodinách páči/nepáči? Ako by sa dali hodiny zlepšiť?",font));
@@ -479,6 +481,7 @@ class PdfGenerator {
         document.open();
         //Toto som sem musel dat lebo si to myslelo ze dokument je prazdny
         document.add(new Chunk(""));
+        document.add(new Paragraph(teacher.getNameSubject(),font));
 
         //Nadpisy
         document.add(new Paragraph("Prečo je/nie je učiteľ pre mňa vzorom? Čo sú jeho silné stránky a na čom by mohol popracovať?",font));

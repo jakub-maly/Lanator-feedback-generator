@@ -11,5 +11,5 @@ The application is found in the `Application` folder. The application will only 
  - The headers do not include the subject and teacher names
 
 ## Planned features:
- - Email sending
+ - Email sending (In alpha now)
  - `.exe` version

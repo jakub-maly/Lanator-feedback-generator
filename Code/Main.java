@@ -82,7 +82,7 @@ public class Main extends Application {
             logo = new javafx.scene.image.Image("icon.png");
 
 //            main window frame
-            window.setTitle("Feedback Excel to PDF converter");
+            window.setTitle("Lanatorator 3000");
             window.getIcons().add(logo);
 
 //            vertical box, contains all graphics Nodes

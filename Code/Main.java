@@ -366,7 +366,15 @@ class PdfGenerator {
         int filenumber = 1;
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = directory.getPath() + "\\";
+        String path = "";
+
+        //Povinne predmety idu do mandatory priecinku a nepovinne do optional
+        if (!teacher.optionalSubject) {
+            path = directory.getPath() + "\\mandatory\\";
+        } else {
+            path = directory.getPath() + "\\optional\\";
+        }
+
         String subjectName = fixFileName(teacher.getNameSubject());
         String filename = "ratings_" + subjectName;
 

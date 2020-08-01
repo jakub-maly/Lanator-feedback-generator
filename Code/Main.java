@@ -339,12 +339,16 @@ public class Main extends Application {
 
 class PdfGenerator {
 
-    private HashMap averages;
+    private HashMap averagesMandatory;
+    private HashMap averagesOptional;
+    private ArrayList<String> mandatorySubjectList;
+    private ArrayList<String> optionalSubjectList;
     private Font font;
 
     PdfGenerator(Vector teachers) throws IOException, DocumentException {
 
-        averages = calculateAverages(teachers);
+        averagesMandatory = calculateAverages(teachers);
+        averagesOptional = calculateAveragesOptional(teachers);
 
         BaseFont baseFont = BaseFont.createFont("roboto.ttf",BaseFont.IDENTITY_H,BaseFont.EMBEDDED);
         font = new Font(baseFont);
@@ -363,7 +367,8 @@ class PdfGenerator {
 
         //Veci na path kde sa to ulozi a nazov suboru
         String path = directory.getPath() + "\\";
-        String filename = "ratings_" + teacher.getNameSubject();
+        String subjectName = fixFileName(teacher.getNameSubject());
+        String filename = "ratings_" + subjectName;
 
         //Veci na vytvorenie pdfka
         Document document = new Document();
@@ -448,9 +453,17 @@ class PdfGenerator {
             document.add(new Paragraph("Hodnotenia všetkých predmetov/učiteľov od najnižšieho po najvyššie",font));
             document.add(new Paragraph("Evaluation of all subject/teachers from the lowest to the highest",font));
 
-            //Vezmem LinkedList priemerov na danu otazku a spravim z toho array
-            LinkedList averagesTemp = (LinkedList)averages.get(question);
-            Object[] averagesArray = averagesTemp.toArray();
+            //Vezmem LinkedList priemerov na danu otazku (optional a mandatory subjects sa porovnavaju osobitne) a spravim z toho array
+
+            Object[] averagesArray = null;
+
+            if (!teacher.optionalSubject) {
+                LinkedList averagesTemp = (LinkedList) averagesMandatory.get(question);
+                averagesArray = averagesTemp.toArray();
+            } else {
+                LinkedList averagesTemp = (LinkedList) averagesOptional.get(question);
+                averagesArray = averagesTemp.toArray();
+            }
 
             //Vytvorim dataset na priemery
             DefaultCategoryDataset averagesSet = new DefaultCategoryDataset();
@@ -477,6 +490,22 @@ class PdfGenerator {
             document.add(averagesChartImage);
             toRemove = new File(averagesChartFileName);
             toRemove.delete();
+
+            //Na koniec pridam zoznam vsetkych porovnavanych predmetov podla toho ci je mandatory alebo optional
+            ArrayList<String> comparedSubjects;
+
+            if (!teacher.optionalSubject) {
+                comparedSubjects = mandatorySubjectList;
+            } else {
+                comparedSubjects = optionalSubjectList;
+            }
+
+            document.add(new Paragraph("Porovnané predmety:",font));
+            document.add(new Paragraph("Compared subjects:",font));
+
+            for (int i = 0; i < comparedSubjects.size(); i++) {
+                document.add(new Paragraph(comparedSubjects.get(i),font));
+            }
 
             document.newPage();
 
@@ -582,49 +611,117 @@ class PdfGenerator {
 
         for (Object teacher : teachers) {
 
-            HashMap ratings = ((Teacher) teacher).getHashMap();
-            Iterator it = ratings.entrySet().iterator();
+            if (((Teacher)teacher).optionalSubject == false) {
 
-            while (it.hasNext()) {
+                mandatorySubjectList.add(((Teacher)teacher).getNameSubject());
 
-                Map.Entry pair = (Map.Entry) it.next();
-                int[] frequencies = (int[]) pair.getValue();
-                String question = (String) pair.getKey();
+                HashMap ratings = ((Teacher) teacher).getHashMap();
+                Iterator it = ratings.entrySet().iterator();
 
-                int totalScore = 0;
-                int totalRespondents = 0;
-                float currentAverage = 0;
+                while (it.hasNext()) {
 
-                for (int i = 0; i < frequencies.length; i++) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    int[] frequencies = (int[]) pair.getValue();
+                    String question = (String) pair.getKey();
 
-                    totalScore += (i + 1) * frequencies[i];
-                    totalRespondents += frequencies[i];
+                    int totalScore = 0;
+                    int totalRespondents = 0;
+                    float currentAverage = 0;
 
+                    for (int i = 0; i < frequencies.length; i++) {
+
+                        totalScore += (i + 1) * frequencies[i];
+                        totalRespondents += frequencies[i];
+
+                    }
+
+                    currentAverage = (float) totalScore / (float) totalRespondents;
+
+                    if (averages.containsKey(question)) {
+
+                        LinkedList temp = averages.get(question);
+                        addValue(temp, currentAverage);
+                        averages.put(question, temp);
+
+                    } else {
+
+                        LinkedList<Float> temp = new LinkedList<>();
+                        addValue(temp, currentAverage);
+                        averages.put(question, temp);
+
+                    }
+
+                    //it.remove();
                 }
-
-                currentAverage = (float) totalScore / (float) totalRespondents;
-
-                if (averages.containsKey(question)) {
-
-                    LinkedList temp = averages.get(question);
-                    addValue(temp, currentAverage);
-                    averages.put(question, temp);
-
-                } else {
-
-                    LinkedList<Float> temp = new LinkedList<>();
-                    addValue(temp, currentAverage);
-                    averages.put(question, temp);
-
-                }
-
-                //it.remove();
             }
 
         }
 
         return averages;
 
+    }
+
+    public HashMap calculateAveragesOptional(Vector teachers) {
+
+        HashMap<String, LinkedList<Float>> averages = new HashMap<>();
+
+        for (Object teacher : teachers) {
+
+            if (((Teacher)teacher).optionalSubject == true) {
+
+                optionalSubjectList.add(((Teacher)teacher).getNameSubject());
+
+                HashMap ratings = ((Teacher) teacher).getHashMap();
+                Iterator it = ratings.entrySet().iterator();
+
+                while (it.hasNext()) {
+
+                    Map.Entry pair = (Map.Entry) it.next();
+                    int[] frequencies = (int[]) pair.getValue();
+                    String question = (String) pair.getKey();
+
+                    int totalScore = 0;
+                    int totalRespondents = 0;
+                    float currentAverage = 0;
+
+                    for (int i = 0; i < frequencies.length; i++) {
+
+                        totalScore += (i + 1) * frequencies[i];
+                        totalRespondents += frequencies[i];
+
+                    }
+
+                    currentAverage = (float) totalScore / (float) totalRespondents;
+
+                    if (averages.containsKey(question)) {
+
+                        LinkedList temp = averages.get(question);
+                        addValue(temp, currentAverage);
+                        averages.put(question, temp);
+
+                    } else {
+
+                        LinkedList<Float> temp = new LinkedList<>();
+                        addValue(temp, currentAverage);
+                        averages.put(question, temp);
+
+                    }
+
+                    //it.remove();
+                }
+            }
+
+        }
+
+        return averages;
+
+    }
+
+    private String fixFileName(String filename) {
+
+        String newFileName = filename.replaceAll("(\\Q/\\E)|(\\Q?\\E)|(\\Q<\\E)|(\\Q>\\E)|(\\Q\\\\E)|(\\Q:\\E)|(\\Q*\\E)(\\Q|\\E)|(\\Q\"\\E)","+");
+
+        return newFileName;
     }
 
     private static void addValue(LinkedList<Float> llist, float val) {

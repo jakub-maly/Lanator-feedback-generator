@@ -1,11 +1,12 @@
 import com.itextpdf.text.Font;
 import com.itextpdf.text.pdf.BaseFont;
 import javafx.application.Application;
-import javafx.event.EventHandler;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
@@ -42,8 +43,8 @@ public class Main extends Application {
     //    replacement for CSS file for brevity
     public static String buttonStyle =
             "-fx-background-color: hotpink; " +
-            "-fx-text-fill: white;" +
-            "-fx-background-radius: 10;";
+                    "-fx-text-fill: white;" +
+                    "-fx-background-radius: 10;";
     public static String bgStyle =
             "-fx-background-color: pink;";
 
@@ -52,13 +53,47 @@ public class Main extends Application {
     public static VBox vbox;
     public static Label message;
     public static javafx.scene.image.Image logo;
+    public static Button inputButton, outputButton, startButton;
+    public static HBox inputLine, outputLine;
 
     //    input, output
     public static File file, directory;
 
+    //    Teacher objects
+    public static Vector<Teacher> teachers;
+
     //    stores whether the program is running
 //    TODO: add close warning while running
     public static boolean running = false;
+
+
+    /**
+     * Custom JavaFX CheckBox, remembers the Teacher object it represents.
+     */
+    public class SubjectBox extends CheckBox {
+
+        Teacher teacher;
+
+        SubjectBox (Teacher teacher) {
+            this.teacher = teacher;
+
+//            sets CheckBox Text and onAction Event
+            this.setText(teacher.nameSubject);
+            this.setOnAction(this::onAction);
+
+//            sets CSS style
+            this.setStyle(buttonStyle);
+        }
+
+        /**
+         * changes boolean optionalSubject @ Teacher teacher when checked/unchecked
+         *
+         * @param actionEvent   Check/Uncheck event as a necessary Action parameter
+         */
+        void onAction (ActionEvent actionEvent) {
+            teacher.optionalSubject = !teacher.optionalSubject;
+        }
+    }
 
     /**
      * Launches start function
@@ -104,7 +139,7 @@ public class Main extends Application {
             message = new Label("");
 
 //            input button, calls fileChooser, changes inputLabel to selected filepath
-            Button inputButton = new Button("select input file");
+            inputButton = new Button("select input file");
             inputButton.setOnAction(event -> {
                 file = fileChooser.showOpenDialog(window);
                 inputLabel.setText(file.getAbsolutePath());
@@ -112,7 +147,7 @@ public class Main extends Application {
             inputButton.setStyle(buttonStyle);
 
 //            output button, calls directoryChooser, changes outputLabel to selected dirpath
-            Button outputButton = new Button("select output directory");
+            outputButton = new Button("select output directory");
             outputButton.setOnAction(event -> {
                 directory = directoryChooser.showDialog(window);
                 outputLabel.setText(directory.getAbsolutePath());
@@ -121,7 +156,7 @@ public class Main extends Application {
 
 //            begins loading from file (selected by fileChooser)
 //            runs only if both input file and output directory are selected
-            Button startButton = new Button("create");
+            startButton = new Button("create");
             startButton.setOnAction(event -> {
                 if (file != null && directory != null) {
                     setMessage("Reading from Excel file.");
@@ -134,18 +169,14 @@ public class Main extends Application {
             });
             startButton.setStyle(buttonStyle);
 
-//            bar that shows progress
-            ProgressBar progressBar = new ProgressBar();
-            progressBar.setStyle(buttonStyle);
-
 //            creates horizontal arrays of input (and output) buttons and labels
-            HBox inputLine = new HBox();
+            inputLine = new HBox();
             inputLine.getChildren().addAll(inputButton, inputLabel);
             inputLine.setSpacing(10);
             inputLine.setAlignment(Pos.CENTER);
             inputLine.setPadding(new Insets(10, 0, 0, 0));
 
-            HBox outputLine = new HBox();
+            outputLine = new HBox();
             outputLine.getChildren().addAll(outputButton, outputLabel);
             outputLine.setSpacing(10);
             outputLine.setAlignment(Pos.CENTER);
@@ -165,8 +196,53 @@ public class Main extends Application {
         }
     }
 
-    void setApplicationStype () {
-        vbox.setStyle(bgStyle);
+    /**
+     * Redraws the UI with SubjectBox Nodes for each subject (from Teacher objects)
+     */
+    void drawSubjectList () {
+        setMessage("Loading subjects, please check optional subjects.");
+
+        vbox.getChildren().removeAll();
+        vbox.getChildren().addAll(inputLine, outputLine);
+
+//        creates a SubjectBox for each Teacher
+        for (Teacher teacher : teachers) {
+            vbox.getChildren().add(new SubjectBox(teacher));
+        }
+
+        startButton.setOnAction(this::setOptionalSubjects);
+        vbox.getChildren().addAll(startButton, message);
+    }
+
+    /**
+     * Calls for PDFs to be generated
+     *
+     * @param actionEvent
+     */
+    void setOptionalSubjects(ActionEvent actionEvent) {
+
+        try {
+            PdfGenerator pdfGenerator = new PdfGenerator(teachers);
+
+            for (int i = 0; i < teachers.size(); i++) {
+
+                String currentSubjectName = teachers.get(i).getNameSubject();
+
+                pdfGenerator.generateRatings(teachers.get(i), directory);
+//                setMessage("Generated ratings ratings for " + currentSubjectName);
+
+                pdfGenerator.generateSubEval(teachers.get(i), directory);
+//                setMessage("Generated subject evaluation for " + currentSubjectName);
+
+                pdfGenerator.generateTeachEval(teachers.get(i), directory);
+//                setMessage("Generated teacher evaluation for " + currentSubjectName);
+            }
+
+            setMessage("Generated all PDF files.");
+            
+        } catch (Exception exception) {
+            showError(exception);
+        }
     }
 
     /**
@@ -226,29 +302,13 @@ public class Main extends Application {
                 teachersVector.add((Teacher) mapElement.getValue());
             }
 
+            this.teachers = teachersVector;
+
             iteratorRow.remove();
             inputStream.close();
             workbook.close();
 
             setMessage("Done reading Excel file.");
-
-            PdfGenerator pdfGenerator = new PdfGenerator(teachersVector);
-
-            for (int i = 0; i < teachersVector.size(); i++) {
-
-                String currentSubjectName = teachersVector.get(i).getNameSubject();
-
-                pdfGenerator.generateRatings(teachersVector.get(i), directory);
-//                setMessage("Generated ratings ratings for " + currentSubjectName);
-
-                pdfGenerator.generateSubEval(teachersVector.get(i),directory);
-//                setMessage("Generated subject evaluation for " + currentSubjectName);
-
-                pdfGenerator.generateTeachEval(teachersVector.get(i),directory);
-//                setMessage("Generated teacher evaluation for " + currentSubjectName);
-            }
-
-            setMessage("Generated all PDF files.");
         } catch (Exception exception) {
             showError(exception);
         }
@@ -579,15 +639,17 @@ class PdfGenerator {
 }
 
 class Teacher {
-    private String nameSubject;
-    private HashMap<String, int[]> numQuestions;
-    private Vector<String> subjectEval, teacherEval;
+    public String nameSubject;
+    public HashMap<String, int[]> numQuestions;
+    public Vector<String> subjectEval, teacherEval;
+    public boolean optionalSubject;
 
     Teacher(String nameSubject){
         this.nameSubject = nameSubject;
         numQuestions = new HashMap<>();
         subjectEval = new Vector<>(5,5);
         teacherEval = new Vector<>(5,5);
+        optionalSubject = false;
     }
 
     void addScore(String question, double score, double maxScore){

@@ -8,7 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
@@ -63,7 +63,6 @@ public class Main extends Application {
     public static Vector<Teacher> teachers;
 
     //    stores whether the program is running
-//    TODO: add close warning while running
     public static boolean running = false;
 
 
@@ -112,6 +111,7 @@ public class Main extends Application {
     @Override
     public void start(Stage window) {
         try {
+            this.window = window;
 
 //            top bar logo
             logo = new javafx.scene.image.Image("icon.png");
@@ -202,16 +202,23 @@ public class Main extends Application {
     void drawSubjectList () {
         setMessage("Loading subjects, please check optional subjects.");
 
-        vbox.getChildren().removeAll();
-        vbox.getChildren().addAll(inputLine, outputLine);
+        vbox.getChildren().clear();
+        startButton.setOnAction(this::setOptionalSubjects);
+        vbox.getChildren().addAll(inputLine, outputLine, startButton, message);
 
 //        creates a SubjectBox for each Teacher
         for (Teacher teacher : teachers) {
             vbox.getChildren().add(new SubjectBox(teacher));
         }
 
-        startButton.setOnAction(this::setOptionalSubjects);
-        vbox.getChildren().addAll(startButton, message);
+        ScrollPane pane = new ScrollPane();
+        pane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        pane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        pane.setContent(vbox);
+
+        Scene scene = new Scene(pane);
+        window.setScene(scene);
+        window.show();
     }
 
     /**
@@ -239,7 +246,7 @@ public class Main extends Application {
             }
 
             setMessage("Generated all PDF files.");
-            
+
         } catch (Exception exception) {
             showError(exception);
         }
@@ -302,13 +309,15 @@ public class Main extends Application {
                 teachersVector.add((Teacher) mapElement.getValue());
             }
 
-            this.teachers = teachersVector;
-
             iteratorRow.remove();
             inputStream.close();
             workbook.close();
 
+            this.teachers = teachersVector;
+
             setMessage("Done reading Excel file.");
+
+            drawSubjectList();
         } catch (Exception exception) {
             showError(exception);
         }

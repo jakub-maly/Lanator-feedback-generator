@@ -9,5 +9,29 @@ The application is found in the `Application` folder. The `.jar` version will on
  - The application temporarily creates images and then deletes them in the same folder as itself. **To prevent other images with the same name being deleted, run this application from an empty directory!** 
  - The application may falsely trigger some anti-virus software warnings for ransomware (due to modifying a large amount of pictures described above).
 
-## Planned features:
- - Email sending (in alpha now)
+## Changelog:
+
+### Optional Subjects UI Support (01 August 2020)
+
+```
+Teacher
+   +	(v) public boolean optionalSubject
+
+Main
+   +	(m) void drawSubjectList ()
+		-- draws all CheckBoxes @ SubjectBox
+
+   +	(m) void setOptionalSubjects (ActionEvent actionEvent)
+		-- calls PDF generation after startButton is pressed @ PdfGenerator
+
+   ~    (m) void createHash (File file)
+		-- Vector<Teacher> teachers is now a static variable
+		-- removed File directory from @param as an unused variable
+
+SubjectBox
+   + 	(m) SubjectBox (Teacher teacher)
+		-- custom CheckBox to toggle @ Teacher optionalSubject
+
+   + 	(m) onAction (ActionEvent actionEvent)
+		-- triggers a boolean switch operation @ Teacher optionalSubject
+```

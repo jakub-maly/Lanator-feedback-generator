@@ -218,7 +218,6 @@ public class Main extends Application {
 
         Scene scene = new Scene(pane);
         window.setScene(scene);
-        window.show();
     }
 
     /**
@@ -229,25 +228,33 @@ public class Main extends Application {
     void setOptionalSubjects(ActionEvent actionEvent) {
 
         try {
+
             PdfGenerator pdfGenerator = new PdfGenerator(teachers);
 
-            for (int i = 0; i < teachers.size(); i++) {
+            vbox.getChildren().clear();
+            vbox.getChildren().addAll(message);
+            Scene scene = new Scene(vbox);
+            window.setScene(scene);
 
-                String currentSubjectName = teachers.get(i).getNameSubject();
+            for (Teacher teacher : teachers) {
 
-                pdfGenerator.generateRatings(teachers.get(i), directory);
-//                setMessage("Generated ratings ratings for " + currentSubjectName);
+                String currentSubjectName = teacher.getNameSubject();
 
-                pdfGenerator.generateSubEval(teachers.get(i), directory);
-//                setMessage("Generated subject evaluation for " + currentSubjectName);
+                pdfGenerator.generateRatings(teacher, directory);
+                System.out.println("generated ratings for " + currentSubjectName);
 
-                pdfGenerator.generateTeachEval(teachers.get(i), directory);
-//                setMessage("Generated teacher evaluation for " + currentSubjectName);
+                pdfGenerator.generateSubEval(teacher, directory);
+                System.out.println("Generated subject evaluation for " + currentSubjectName);
+
+                pdfGenerator.generateTeachEval(teacher, directory);
+                System.out.println("Generated teacher evaluation for " + currentSubjectName);
             }
 
             setMessage("Generated all PDF files.");
 
         } catch (Exception exception) {
+//            System.out.println("cause: " + exception.getCause().toString());
+            exception.printStackTrace();
             showError(exception);
         }
     }
@@ -345,17 +352,29 @@ class PdfGenerator {
     private ArrayList<String> optionalSubjectList;
     private Font font;
 
-    PdfGenerator(Vector teachers) throws IOException, DocumentException {
+    PdfGenerator(Vector teachers) {
+//    PdfGenerator(Vector teachers) throws IOException, DocumentException {
+        try {
+            mandatorySubjectList = new ArrayList<>();
+            optionalSubjectList = new ArrayList<>();
 
-        averagesMandatory = calculateAverages(teachers);
-        averagesOptional = calculateAveragesOptional(teachers);
+            averagesMandatory = calculateAverages(teachers);
+            averagesOptional = calculateAveragesOptional(teachers);
 
-        BaseFont baseFont = BaseFont.createFont("roboto.ttf",BaseFont.IDENTITY_H,BaseFont.EMBEDDED);
-        font = new Font(baseFont);
-
+            BaseFont baseFont = BaseFont.createFont("roboto.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            font = new Font(baseFont);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
     }
 
     public void generateRatings(Teacher teacher, File directory) throws IOException, DocumentException {
+
+//        creates directories
+        File mandatoryDir = new File(directory.getPath() + "\\mandatory\\");
+        File optionalDir = new File(directory.getPath() + "\\optional\\");
+        mandatoryDir.mkdir();
+        optionalDir.mkdir();
 
         //Vezmem reku hodnotenia ucitela
         HashMap ratings = teacher.getHashMap();
@@ -385,6 +404,25 @@ class PdfGenerator {
         document.open();
         //Toto som sem musel dat lebo si to myslelo ze dokument je prazdny
         document.add(new Chunk(""));
+
+        //Na koniec pridam zoznam vsetkych porovnavanych predmetov podla toho ci je mandatory alebo optional
+        ArrayList<String> comparedSubjects;
+
+        if (!teacher.optionalSubject) {
+            comparedSubjects = mandatorySubjectList;
+        } else {
+            comparedSubjects = optionalSubjectList;
+        }
+
+        document.add(new Paragraph("Porovnané predmety:",font));
+        document.add(new Paragraph("Compared subjects:",font));
+
+        for (int i = 0; i < comparedSubjects.size(); i++) {
+            document.add(new Paragraph(comparedSubjects.get(i),font));
+        }
+
+        document.newPage();
+
         document.add(new Paragraph(teacher.getNameSubject(),font));
 
         while (it.hasNext()) {
@@ -499,22 +537,6 @@ class PdfGenerator {
             toRemove = new File(averagesChartFileName);
             toRemove.delete();
 
-            //Na koniec pridam zoznam vsetkych porovnavanych predmetov podla toho ci je mandatory alebo optional
-            ArrayList<String> comparedSubjects;
-
-            if (!teacher.optionalSubject) {
-                comparedSubjects = mandatorySubjectList;
-            } else {
-                comparedSubjects = optionalSubjectList;
-            }
-
-            document.add(new Paragraph("Porovnané predmety:",font));
-            document.add(new Paragraph("Compared subjects:",font));
-
-            for (int i = 0; i < comparedSubjects.size(); i++) {
-                document.add(new Paragraph(comparedSubjects.get(i),font));
-            }
-
             document.newPage();
 
             //Zvysim cislo grafu o 1
@@ -619,7 +641,7 @@ class PdfGenerator {
 
         for (Object teacher : teachers) {
 
-            if (((Teacher)teacher).optionalSubject == false) {
+            if (!((Teacher) teacher).optionalSubject) {
 
                 mandatorySubjectList.add(((Teacher)teacher).getNameSubject());
 
@@ -675,7 +697,7 @@ class PdfGenerator {
 
         for (Object teacher : teachers) {
 
-            if (((Teacher)teacher).optionalSubject == true) {
+            if (((Teacher) teacher).optionalSubject) {
 
                 optionalSubjectList.add(((Teacher)teacher).getNameSubject());
 

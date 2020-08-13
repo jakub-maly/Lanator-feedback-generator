@@ -10,6 +10,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -230,11 +231,6 @@ public class Main extends Application {
         try {
 
             PdfGenerator pdfGenerator = new PdfGenerator(teachers);
-
-            vbox.getChildren().clear();
-            vbox.getChildren().addAll(message);
-            Scene scene = new Scene(vbox);
-            window.setScene(scene);
 
             for (Teacher teacher : teachers) {
 

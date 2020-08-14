@@ -70,7 +70,7 @@ public class Main extends Application {
     /**
      * Custom JavaFX CheckBox, remembers the Teacher object it represents.
      */
-    public class SubjectBox extends CheckBox {
+    public static class SubjectBox extends CheckBox {
 
         Teacher teacher;
 
@@ -98,7 +98,7 @@ public class Main extends Application {
     /**
      * Launches start function
      *
-     * @param args
+     * @param args  mandatory arguments
      */
     public static void main(String[] args){
         launch(args);
@@ -112,7 +112,7 @@ public class Main extends Application {
     @Override
     public void start(Stage window) {
         try {
-            this.window = window;
+            Main.window = window;
 
 //            top bar logo
             logo = new javafx.scene.image.Image("icon.png");
@@ -188,8 +188,8 @@ public class Main extends Application {
 
 //            creates a scene, shows
             Scene scene = new Scene(vbox);
-            this.window.setScene(scene);
-            this.window.show();
+            Main.window.setScene(scene);
+            Main.window.show();
         }
 
         catch (Exception exception) {
@@ -224,7 +224,7 @@ public class Main extends Application {
     /**
      * Calls for PDFs to be generated
      *
-     * @param actionEvent
+     * @param actionEvent   mandatory ActionEvent parameter
      */
     void setOptionalSubjects(ActionEvent actionEvent) {
 
@@ -306,7 +306,7 @@ public class Main extends Application {
                         } else if (cellMaster.getStringCellValue().contains("What are")) {      // what are je na Teacher
                             teacherCurrent.addTeacherEval(rowCurrent.getCell(cellMaster.getColumnIndex()).getStringCellValue());
                         } else{
-                            teacherCurrent.addScore(cellMaster.getStringCellValue(), rowCurrent.getCell(cellMaster.getColumnIndex()).getNumericCellValue(), 5);
+                            teacherCurrent.addScore(cellMaster.getStringCellValue(), rowCurrent.getCell(cellMaster.getColumnIndex()).getNumericCellValue());
                         }
                         teachers.replace(teacherCurrent.getNameSubject(), teacherCurrent);
                     }
@@ -314,17 +314,15 @@ public class Main extends Application {
             }
 
             Vector<Teacher> teachersVector = new Vector<>(5, 5);
-            Iterator hmIterator = teachers.entrySet().iterator();
-            while (hmIterator.hasNext()) {
-                Map.Entry mapElement = (Map.Entry) hmIterator.next();
-                teachersVector.add((Teacher) mapElement.getValue());
+            for (Map.Entry<String, Teacher> stringTeacherEntry : teachers.entrySet()) {
+                teachersVector.add((Teacher) ((Map.Entry) stringTeacherEntry).getValue());
             }
 
             iteratorRow.remove();
             inputStream.close();
             workbook.close();
 
-            this.teachers = teachersVector;
+            Main.teachers = teachersVector;
 
             setMessage("Done reading Excel file.");
 
@@ -382,20 +380,22 @@ class PdfGenerator {
 
         //Vezmem reku hodnotenia ucitela
         HashMap ratings = teacher.getHashMap();
-        //Vytvorim si tuto vec aby som mohol iterovat cez hash mapu
-        Iterator it = ratings.entrySet().iterator();
+
+//        get and sort all keys for teacher ratings
+        LinkedList keys = new LinkedList<>(ratings.keySet());
+        Collections.sort(keys);
 
         //Na nazvy suborov
         int filenumber = 1;
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = "";
+        String path;
 
         //Povinne predmety idu do mandatory priecinku a nepovinne do optional
-        if (!teacher.optionalSubject) {
-            path = directory.getPath() + "\\mandatory\\";
-        } else {
+        if (teacher.optionalSubject) {
             path = directory.getPath() + "\\optional\\";
+        } else {
+            path = directory.getPath() + "\\mandatory\\";
         }
 
         String subjectName = fixFileName(teacher.getNameSubject());
@@ -412,29 +412,27 @@ class PdfGenerator {
         //Na koniec pridam zoznam vsetkych porovnavanych predmetov podla toho ci je mandatory alebo optional
         ArrayList<String> comparedSubjects;
 
-        if (!teacher.optionalSubject) {
-            comparedSubjects = mandatorySubjectList;
-        } else {
+        if (teacher.optionalSubject) {
             comparedSubjects = optionalSubjectList;
+        } else {
+            comparedSubjects = mandatorySubjectList;
         }
 
         document.add(new Paragraph("Porovnané predmety:",font));
         document.add(new Paragraph("Compared subjects:",font));
 
-        for (int i = 0; i < comparedSubjects.size(); i++) {
-            document.add(new Paragraph(comparedSubjects.get(i),font));
+        for (String comparedSubject : comparedSubjects) {
+            document.add(new Paragraph(comparedSubject, font));
         }
 
         document.newPage();
 
         document.add(new Paragraph(teacher.getNameSubject(),font));
 
-        while (it.hasNext()) {
+        for (Object key : keys) {
 
             //Vezmem value teda array frekvencii hodnoteni a nazov predmetu z objektu na ktorom sme teraz
-            Map.Entry pair = (Map.Entry) it.next();
-            int[] frequencies = (int[]) pair.getValue();
-            String question = (String) pair.getKey();
+            int[] frequencies = (int[]) ratings.get(key);
 
             //Vytvorim dataset na graf
             DefaultCategoryDataset ratingsSet = new DefaultCategoryDataset();
@@ -453,7 +451,7 @@ class PdfGenerator {
             //Intermediate premenne na priemer
             int totalScore = 0;
             int totalRespondents = 0;
-            float average = 0;
+            float average;
 
             //Prebehnem pole s frekvenciami a dam ich do datasetu
             for (int i = 0; i < frequencies.length; i++) {
@@ -484,14 +482,14 @@ class PdfGenerator {
                     ratingsSet, PlotOrientation.VERTICAL, false, true, false);
 
             //A nakreslim z toho pekny obrazok
-            String ratingsChartFileName = "ratings" + Integer.toString(filenumber) + ".png";
+            String ratingsChartFileName = "ratings" + filenumber + ".png";
             File ratingsChartFile = new File(ratingsChartFileName);
             ChartUtils.saveChartAsPNG(ratingsChartFile, ratingsChart, 640, 480);
 
             //Dam otazku a za nou graf a tabulku to pdfka
             Image ratingsChartImage = Image.getInstance(ratingsChartFileName);
             ratingsChartImage.scalePercent(60);
-            document.add(new Paragraph(question,font));
+            document.add(new Paragraph((String) key,font));
             document.add(ratingsChartImage);
             File toRemove = new File(ratingsChartFileName);
             toRemove.delete();
@@ -505,13 +503,13 @@ class PdfGenerator {
 
             //Vezmem LinkedList priemerov na danu otazku (optional a mandatory subjects sa porovnavaju osobitne) a spravim z toho array
 
-            Object[] averagesArray = null;
+            Object[] averagesArray;
 
             if (!teacher.optionalSubject) {
-                LinkedList averagesTemp = (LinkedList) averagesMandatory.get(question);
+                LinkedList averagesTemp = (LinkedList) averagesMandatory.get(key);
                 averagesArray = averagesTemp.toArray();
             } else {
-                LinkedList averagesTemp = (LinkedList) averagesOptional.get(question);
+                LinkedList averagesTemp = (LinkedList) averagesOptional.get(key);
                 averagesArray = averagesTemp.toArray();
             }
 
@@ -520,9 +518,7 @@ class PdfGenerator {
 
             //Nahadzem priemery do datasetu
             for (int i = 0; i < averagesArray.length; i++) {
-
                 averagesSet.setValue((float)averagesArray[i], "Average", Integer.toString(i+1));
-
             }
 
             //Spravim chart z priemerov
@@ -530,7 +526,7 @@ class PdfGenerator {
                     "", "Hodnota/ value", "",
                     averagesSet, PlotOrientation.VERTICAL, false, true, false);
 
-            String averagesChartFileName = "averages" + Integer.toString(filenumber) + ".png";
+            String averagesChartFileName = "averages" + filenumber + ".png";
             File averagesChartFile = new File(averagesChartFileName);
             ChartUtils.saveChartAsPNG(averagesChartFile, averagesChart, 640, 480);
 
@@ -545,16 +541,11 @@ class PdfGenerator {
 
             //Zvysim cislo grafu o 1
             filenumber++;
-
-            //Toto tu zevraj treba podla StackOverflow
-            it.remove();
-
         }
 
         //Koniec prace s pdfkom
         document.close();
         fileOutputStream.close();
-
     }
 
     public void generateSubEval(Teacher teacher, File directory) throws IOException, DocumentException {
@@ -562,7 +553,7 @@ class PdfGenerator {
         String[] subjectEval = teacher.getSubjectEval();
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = "";
+        String path;
 
         //Povinne predmety idu do mandatory priecinku a nepovinne do optional
         if (!teacher.optionalSubject) {
@@ -592,10 +583,8 @@ class PdfGenerator {
         PdfPTable table = new PdfPTable(1);
 
         //Do tabulky nahadzem vsetky hodnotenia na dany predmet
-        for (int i = 0; i < subjectEval.length; i++) {
-
-            table.addCell(subjectEval[i]);
-
+        for (String eval : subjectEval) {
+            table.addCell(eval);
         }
 
         //Pridam tabulku do suboru
@@ -604,7 +593,6 @@ class PdfGenerator {
         //Koniec prace s pdfkom
         document.close();
         fileOutputStream.close();
-
     }
 
     public void generateTeachEval(Teacher teacher, File directory) throws IOException, DocumentException {
@@ -612,7 +600,7 @@ class PdfGenerator {
         String[] teachEval = teacher.getTeacherEval();
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = "";
+        String path;
 
         //Povinne predmety idu do mandatory priecinku a nepovinne do optional
         if (!teacher.optionalSubject) {
@@ -642,10 +630,8 @@ class PdfGenerator {
         PdfPTable table = new PdfPTable(1);
 
         //Do tabulky nahadzem vsetky hodnotenia na dany predmet
-        for (int i = 0; i < teachEval.length; i++) {
-
-            table.addCell(teachEval[i]);
-
+        for (String eval : teachEval) {
+            table.addCell(eval);
         }
 
         //Pridam tabulku do suboru
@@ -654,7 +640,6 @@ class PdfGenerator {
         //Koniec prace s pdfkom
         document.close();
         fileOutputStream.close();
-
     }
 
     public HashMap calculateAverages(Vector teachers) {
@@ -668,49 +653,38 @@ class PdfGenerator {
                 mandatorySubjectList.add(((Teacher)teacher).getNameSubject());
 
                 HashMap ratings = ((Teacher) teacher).getHashMap();
-                Iterator it = ratings.entrySet().iterator();
+                LinkedList keys = new LinkedList<>(ratings.keySet());
+                Collections.sort(keys);
 
-                while (it.hasNext()) {
+                for (Object key : keys) {
 
-                    Map.Entry pair = (Map.Entry) it.next();
-                    int[] frequencies = (int[]) pair.getValue();
-                    String question = (String) pair.getKey();
+                    int[] frequencies = (int[]) ratings.get(key);
+                    String question = (String) key;
 
                     int totalScore = 0;
                     int totalRespondents = 0;
-                    float currentAverage = 0;
+                    float currentAverage;
 
                     for (int i = 0; i < frequencies.length; i++) {
-
                         totalScore += (i + 1) * frequencies[i];
                         totalRespondents += frequencies[i];
-
                     }
 
                     currentAverage = (float) totalScore / (float) totalRespondents;
 
                     if (averages.containsKey(question)) {
-
                         LinkedList temp = averages.get(question);
                         addValue(temp, currentAverage);
                         averages.put(question, temp);
-
                     } else {
-
                         LinkedList<Float> temp = new LinkedList<>();
                         addValue(temp, currentAverage);
                         averages.put(question, temp);
-
                     }
-
-                    //it.remove();
                 }
             }
-
         }
-
         return averages;
-
     }
 
     public HashMap calculateAveragesOptional(Vector teachers) {
@@ -724,56 +698,42 @@ class PdfGenerator {
                 optionalSubjectList.add(((Teacher)teacher).getNameSubject());
 
                 HashMap ratings = ((Teacher) teacher).getHashMap();
-                Iterator it = ratings.entrySet().iterator();
+                LinkedList<String> keys = new LinkedList<>(ratings.keySet());
+                Collections.sort(keys);
 
-                while (it.hasNext()) {
+                for (Object key : keys) {
 
-                    Map.Entry pair = (Map.Entry) it.next();
-                    int[] frequencies = (int[]) pair.getValue();
-                    String question = (String) pair.getKey();
+                    int[] frequencies = (int[]) ratings.get(key);
+                    String question = (String) key;
 
                     int totalScore = 0;
                     int totalRespondents = 0;
-                    float currentAverage = 0;
+                    float currentAverage;
 
                     for (int i = 0; i < frequencies.length; i++) {
-
                         totalScore += (i + 1) * frequencies[i];
                         totalRespondents += frequencies[i];
-
                     }
 
                     currentAverage = (float) totalScore / (float) totalRespondents;
 
                     if (averages.containsKey(question)) {
-
                         LinkedList temp = averages.get(question);
                         addValue(temp, currentAverage);
                         averages.put(question, temp);
-
                     } else {
-
                         LinkedList<Float> temp = new LinkedList<>();
                         addValue(temp, currentAverage);
                         averages.put(question, temp);
-
                     }
-
-                    //it.remove();
                 }
             }
-
         }
-
         return averages;
-
     }
 
     private String fixFileName(String filename) {
-
-        String newFileName = filename.replaceAll("(\\Q/\\E)|(\\Q?\\E)|(\\Q<\\E)|(\\Q>\\E)|(\\Q\\\\E)|(\\Q:\\E)|(\\Q*\\E)(\\Q|\\E)|(\\Q\"\\E)","+");
-
-        return newFileName;
+        return filename.replaceAll("(\\Q/\\E)|(\\Q?\\E)|(\\Q<\\E)|(\\Q>\\E)|(\\Q\\\\E)|(\\Q:\\E)|(\\Q*\\E)(\\Q|\\E)|(\\Q\"\\E)","+");
     }
 
     private static void addValue(LinkedList<Float> llist, float val) {
@@ -791,9 +751,7 @@ class PdfGenerator {
             }
             llist.add(i, val);
         }
-
     }
-
 }
 
 class Teacher {
@@ -810,15 +768,15 @@ class Teacher {
         optionalSubject = false;
     }
 
-    void addScore(String question, double score, double maxScore){
+    void addScore(String question, double score){
         if (numQuestions.containsKey(question)){
             int[] frequency = numQuestions.get(question);
             frequency[(int)(score-1)]+=1;
             numQuestions.replace(question, frequency);
         }
         else{
-            int[] frequency = new int[(int)maxScore];
-            for (int i=0; i<maxScore; i++){
+            int[] frequency = new int[(int) (double) 5];
+            for (int i = 0; i< (double) 5; i++){
                 frequency[i]=0;
             }
             frequency[(int)(score-1)]+=1;

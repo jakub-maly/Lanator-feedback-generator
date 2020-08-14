@@ -162,7 +162,7 @@ public class Main extends Application {
                 if (file != null && directory != null) {
                     setMessage("Reading from Excel file.");
                     running = true;
-                    createHash(file, directory);
+                    createHash(file);
                 }
                 else {
                     setMessage("Failed to read from file, input or output selection invalid.");
@@ -232,14 +232,14 @@ public class Main extends Application {
 
             PdfGenerator pdfGenerator = new PdfGenerator(teachers);
 
+            setMessage("Optional subjects selected, generating feedback.");
+
             vbox.getChildren().clear();
             vbox.getChildren().add(message);
 
             Pane pane = new Pane(vbox);
             Scene scene = new Scene(pane);
             window.setScene(scene);
-
-            setMessage("Optional subjects selected, generating feedback.");
 
             for (Teacher teacher : teachers) {
 
@@ -268,9 +268,8 @@ public class Main extends Application {
      * Creates a HashMap with all spreadsheet data; calls functions to generate PDFs
      *
      * @param file      input file, excel format
-     * @param directory output directory (for generated PDFs)
      */
-    void createHash (File file, File directory) {
+    void createHash (File file) {
         Row rowCurrent;
         Cell cellMaster;
         Teacher teacherCurrent = null;

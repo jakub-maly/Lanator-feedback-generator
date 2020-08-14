@@ -27,9 +27,17 @@ import com.itextpdf.text.pdf.PdfWriter;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtils;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 
+import java.awt.*;
+import java.awt.Color;
+import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.ColorModel;
 import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
@@ -439,14 +447,14 @@ class PdfGenerator {
 
             //Vytvorim sablonu tabulky
             PdfPTable table = new PdfPTable(6);
-            table.addCell("Hodnota/ value");
+            table.addCell("Hodnota / value");
 
             //Pridam to tabulky cisla hodnoteni
             for (int i = 1; i <= frequencies.length; i++) {
                 table.addCell(Integer.toString(i));
             }
 
-            table.addCell("Koľkokrát/ frequency");
+            table.addCell("Koľkokrát / frequency");
 
             //Intermediate premenne na priemer
             int totalScore = 0;
@@ -469,7 +477,7 @@ class PdfGenerator {
             //Vyratam priemer
             average = (float) totalScore / (float) totalRespondents;
             //A pridam ho do tabulky
-            table.addCell("Priemer/ average");
+            table.addCell("Priemer / average");
             table.addCell(Float.toString(average));
             //Doplnim prazdne bunky do riadku s priemerom lebo inak to nechce spravit tabulku
             for (int i = 2; i <= frequencies.length; i++) {
@@ -478,7 +486,7 @@ class PdfGenerator {
 
             //Spravim chart objekt s datasetu
             JFreeChart ratingsChart = ChartFactory.createBarChart(
-                    "Vaše hodnotenie/ your evaluation", "Hodnota/ value", "Koľkokrát/ frequency",
+                    "Vaše hodnotenie/ your evaluation", "Hodnota / value", "Koľkokrát / frequency",
                     ratingsSet, PlotOrientation.VERTICAL, false, true, false);
 
             //A nakreslim z toho pekny obrazok
@@ -517,14 +525,32 @@ class PdfGenerator {
             DefaultCategoryDataset averagesSet = new DefaultCategoryDataset();
 
             //Nahadzem priemery do datasetu
+            boolean teacherFound = false;
             for (int i = 0; i < averagesArray.length; i++) {
-                averagesSet.setValue((float)averagesArray[i], "Average", Integer.toString(i+1));
+                if (averagesArray[i].equals(average) && !teacherFound) {
+                    averagesSet.setValue((float)averagesArray[i], "thisteacher", Integer.toString(i+1));
+                    teacherFound = true;
+                } else {
+                    averagesSet.setValue((float)averagesArray[i], "Average", Integer.toString(i+1));
+                }
             }
 
             //Spravim chart z priemerov
             JFreeChart averagesChart = ChartFactory.createBarChart(
                     "", "Hodnota/ value", "",
                     averagesSet, PlotOrientation.VERTICAL, false, true, false);
+
+            CategoryPlot plot = averagesChart.getCategoryPlot();
+            plot.getDomainAxis().setVisible(false);
+            plot.getDomainAxis().setCategoryMargin(0.0);
+            BarRenderer barRenderer = (BarRenderer)plot.getRenderer();
+
+            barRenderer.setItemMargin(0);
+//            barRenderer.setMaximumBarWidth(200);
+            barRenderer.setSeriesPaint(1, Color.ORANGE);
+            barRenderer.setSeriesPaint(0, Color.RED);
+
+            barRenderer.setDrawBarOutline(false);
 
             String averagesChartFileName = "averages" + filenumber + ".png";
             File averagesChartFile = new File(averagesChartFileName);

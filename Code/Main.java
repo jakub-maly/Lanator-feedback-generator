@@ -366,6 +366,12 @@ class PdfGenerator {
             averagesMandatory = calculateAverages(teachers);
             averagesOptional = calculateAveragesOptional(teachers);
 
+            //        creates directories
+            File mandatoryDir = new File(Main.directory.getPath() + "\\mandatory\\");
+            File optionalDir = new File(Main.directory.getPath() + "\\optional\\");
+            mandatoryDir.mkdir();
+            optionalDir.mkdir();
+
             BaseFont baseFont = BaseFont.createFont("roboto.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             font = new Font(baseFont);
         } catch (Exception exception) {
@@ -374,12 +380,6 @@ class PdfGenerator {
     }
 
     public void generateRatings(Teacher teacher, File directory) throws IOException, DocumentException {
-
-//        creates directories
-        File mandatoryDir = new File(directory.getPath() + "\\mandatory\\");
-        File optionalDir = new File(directory.getPath() + "\\optional\\");
-        mandatoryDir.mkdir();
-        optionalDir.mkdir();
 
         //Vezmem reku hodnotenia ucitela
         HashMap ratings = teacher.getHashMap();
@@ -400,7 +400,7 @@ class PdfGenerator {
         }
 
         String subjectName = fixFileName(teacher.getNameSubject());
-        String filename = "ratings_" + subjectName;
+        String filename = subjectName + "_ratings";
 
         //Veci na vytvorenie pdfka
         Document document = new Document();
@@ -563,8 +563,17 @@ class PdfGenerator {
         String[] subjectEval = teacher.getSubjectEval();
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = directory.getPath()+"\\";
-        String filename = "subjecteval_" + teacher.getNameSubject();
+        String path = "";
+
+        //Povinne predmety idu do mandatory priecinku a nepovinne do optional
+        if (!teacher.optionalSubject) {
+            path = directory.getPath() + "\\mandatory\\";
+        } else {
+            path = directory.getPath() + "\\optional\\";
+        }
+
+        String subjectName = fixFileName(teacher.getNameSubject());
+        String filename = subjectName + "_subjecteval";
 
         //Veci na vytvorenie pdfka
         Document document = new Document();
@@ -604,8 +613,17 @@ class PdfGenerator {
         String[] teachEval = teacher.getTeacherEval();
 
         //Veci na path kde sa to ulozi a nazov suboru
-        String path = directory.getPath()+"\\";
-        String filename = "teachereval_" + teacher.getNameSubject();
+        String path = "";
+
+        //Povinne predmety idu do mandatory priecinku a nepovinne do optional
+        if (!teacher.optionalSubject) {
+            path = directory.getPath() + "\\mandatory\\";
+        } else {
+            path = directory.getPath() + "\\optional\\";
+        }
+
+        String subjectName = fixFileName(teacher.getNameSubject());
+        String filename = subjectName + "_teachereval";
 
         //Veci na vytvorenie pdfka
         Document document = new Document();

@@ -188,8 +188,8 @@ public class Main extends Application {
 
 //            creates a scene, shows
             Scene scene = new Scene(vbox);
-            window.setScene(scene);
-            window.show();
+            this.window.setScene(scene);
+            this.window.show();
         }
 
         catch (Exception exception) {
@@ -232,12 +232,21 @@ public class Main extends Application {
 
             PdfGenerator pdfGenerator = new PdfGenerator(teachers);
 
+            vbox.getChildren().clear();
+            vbox.getChildren().add(message);
+
+            Pane pane = new Pane(vbox);
+            Scene scene = new Scene(pane);
+            window.setScene(scene);
+
+            setMessage("Optional subjects selected, generating feedback.");
+
             for (Teacher teacher : teachers) {
 
                 String currentSubjectName = teacher.getNameSubject();
 
                 pdfGenerator.generateRatings(teacher, directory);
-                System.out.println("generated ratings for " + currentSubjectName);
+                System.out.println("Generated ratings for " + currentSubjectName);
 
                 pdfGenerator.generateSubEval(teacher, directory);
                 System.out.println("Generated subject evaluation for " + currentSubjectName);

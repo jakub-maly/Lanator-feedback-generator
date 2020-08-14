@@ -32,12 +32,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 
-import java.awt.*;
 import java.awt.Color;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.ColorModel;
 import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
@@ -73,7 +68,6 @@ public class Main extends Application {
 
     //    stores whether the program is running
     public static boolean running = false;
-
 
     /**
      * Custom JavaFX CheckBox, remembers the Teacher object it represents.
@@ -230,6 +224,56 @@ public class Main extends Application {
     }
 
     /**
+     * Multithreading class
+     */
+    public class Dolphin extends Thread {
+
+        //        used to terminate thread if necessary
+        public volatile boolean running = true;
+
+        /**
+         * Terminates thread
+         */
+        public void terminate () {
+            running = false;
+        }
+
+        /**
+         * Starts all PDF generation
+         */
+        public void run () {
+            try {
+//                    loops through all teachers, creates all ratings
+                for (Teacher teacher : teachers) {
+
+//                    stops if thread is terminated
+                    if (!running)
+                        return;
+
+                    PdfGenerator pdfGenerator = new PdfGenerator(teachers);
+                    String currentSubjectName = teacher.getNameSubject();
+
+                    pdfGenerator.generateRatings(teacher, directory);
+                    System.out.println("Generated ratings for " + currentSubjectName);
+
+                    pdfGenerator.generateSubEval(teacher, directory);
+                    System.out.println("Generated subject evaluation for " + currentSubjectName);
+
+                    pdfGenerator.generateTeachEval(teacher, directory);
+                    System.out.println("Generated teacher evaluation for " + currentSubjectName);
+                }
+
+            } catch (Exception exception) {
+                showError(exception);
+                exception.printStackTrace();
+                running = false;
+            } finally {
+                System.exit(0);
+            }
+        }
+    }
+
+    /**
      * Calls for PDFs to be generated
      *
      * @param actionEvent   mandatory ActionEvent parameter
@@ -238,10 +282,9 @@ public class Main extends Application {
 
         try {
 
-            PdfGenerator pdfGenerator = new PdfGenerator(teachers);
-
             setMessage("Optional subjects selected, generating feedback.");
 
+//            removes all interactive GUI elements
             vbox.getChildren().clear();
             vbox.getChildren().add(message);
 
@@ -249,24 +292,18 @@ public class Main extends Application {
             Scene scene = new Scene(pane);
             window.setScene(scene);
 
-            for (Teacher teacher : teachers) {
+//            starts second thread that generates PDFs
+            Dolphin thread = new Dolphin();
+            thread.start();
+            setMessage("PDF files will generate in the background.\nThe application closes once finished.\nTo terminate the process, close the application.");
 
-                String currentSubjectName = teacher.getNameSubject();
-
-                pdfGenerator.generateRatings(teacher, directory);
-                System.out.println("Generated ratings for " + currentSubjectName);
-
-                pdfGenerator.generateSubEval(teacher, directory);
-                System.out.println("Generated subject evaluation for " + currentSubjectName);
-
-                pdfGenerator.generateTeachEval(teacher, directory);
-                System.out.println("Generated teacher evaluation for " + currentSubjectName);
-            }
-
-            setMessage("Generated all PDF files.");
+//            ends thread if window is closed
+            window.setOnCloseRequest(event -> {
+                thread.terminate();
+                window.close();
+            });
 
         } catch (Exception exception) {
-//            System.out.println("cause: " + exception.getCause().toString());
             exception.printStackTrace();
             showError(exception);
         }
@@ -336,7 +373,7 @@ public class Main extends Application {
 
             drawSubjectList();
         } catch (Exception exception) {
-            showError(exception);
+            exception.printStackTrace();
         }
     }
 

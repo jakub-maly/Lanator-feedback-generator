@@ -685,8 +685,8 @@ class PdfGenerator {
         document.add(new Paragraph(teacher.getNameSubject(),font));
 
         //Nadpisy
-        document.add(new Paragraph("Prečo je/nie je učiteľ pre mňa vzorom? Čo sú jeho silné stránky a na čom by mohol popracovať?",font));
-        document.add(new Paragraph("What are the reasons that the teacher is/is not positive role model for me? What are the teacher’s strengths and what could he/she improve?",font));
+        document.add(new Paragraph("Čo sú silné stránky môjho supervízora a na čom by mohol popracovať?",font));
+        document.add(new Paragraph("What are my supervisor’s strengths and what could they improve?",font));
         document.add(new Chunk(""));
 
         //Vytvorim sablonu tabulky
